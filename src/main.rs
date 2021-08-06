@@ -21,17 +21,6 @@ use std::process;
 // This lib is described in the Cargo.toml
 use picturelib::config::Config;
 
-fn example_main() {
-    let mut s = String::from("hello");
-    let len = calculate_length(&mut s);
-
-    println!("The new string is of '{}'", s);
-}
-
-fn calculate_length(s: &mut String)  {
-    (*s).push_str(" World!")
-}
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     let config = Config::new(&args).unwrap_or_else(|err| {
