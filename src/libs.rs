@@ -72,17 +72,23 @@ pub fn run(config: Config) -> Result<(), Error> {
 
     print_bytes(&pic_tmp); // Same here, we are borrowing the reference of the object pointed to it
 
-    let exif = exif::Reader::new()
-        .read_from_container(&mut BufReader::new(&file)).unwrap();
+    // Print the EXIF data if they exist.
+    match exif::Reader::new()
+        .read_from_container(&mut BufReader::new(&file)) {
+        Ok(exif) =>
+            for f in exif.fields() {
+                println!("  {}/{}: {}",
+                         f.ifd_num.index(), f.tag,
+                         f.display_value().with_unit(&exif));
+                println!("      {:?}", f.value);
+            },
+        Err(error) =>
+            println!("Could not read EXIF data from file {}", &pic_tmp),
+    };
 
-    for f in exif.fields() {
-        println!("  {}/{}: {}",
-                 f.ifd_num.index(), f.tag,
-                 f.display_value().with_unit(&exif));
-        println!("      {:?}", f.value);
-    }
+    let mut file = File::create(format!("/Users/jhujol/Projects/rust/picture-indexer/{}", "pics.csv")).unwrap();
 
-    save_results_on_file(&v, "pics.csv");
+    save_results_on_file(&v, file);
 
     //
     // let pic_path = "/Users/jhujol/Desktop/ford_taunus_tc_1972.jpeg";
@@ -94,17 +100,18 @@ pub fn run(config: Config) -> Result<(), Error> {
     Ok(())
 }
 
-fn save_results_on_file(v: &Vec<PictureMetadata>, file_path: &str) -> () {
-    let mut file = File::create(format!("/Users/jhujol/Projects/rust/picture-indexer/{}", file_path)).unwrap();
+fn save_results_on_file(v: &Vec<PictureMetadata>, mut file: File) -> () {
     for item in v {
         let mut ss: String = String::from(item);
         ss.push('\n');
+        println!("***** {}", &ss);
         file.write(ss.as_bytes());
     }
 }
 
 fn print_bytes(picture_path: &String) -> Result<(), Box<dyn error::Error>> {
     let mut file = File::open(picture_path)?;
+    println!("{}", picture_path);
 
     let mut buffer = [0; 100];
     let n = file.read(&mut buffer[..])?; // borrowing the reference of buffer
@@ -116,11 +123,26 @@ fn print_bytes(picture_path: &String) -> Result<(), Box<dyn error::Error>> {
 
 #[cfg(test)]
 mod tests {
+    use std::time::SystemTime;
+
+    use chrono::{DateTime, Utc};
+
+    use crate::PictureMetadata;
+
     #[test]
     fn first_test() {
         let a: i8 = 2;
         let b: i8 = 4;
         assert_eq!(6, a + b, "we are testing addition of {} and {}", a, b);
+    }
+
+    #[test]
+    fn test_picture_metadata() {
+        let now = SystemTime::now();
+        let datetime: DateTime<Utc> = SystemTime::into(now);
+        let a_path = String::from("a_path");
+        let pm = PictureMetadata::new(a_path, datetime).unwrap();
+        assert_eq!("a_path", pm.file_path, "This tests the path is equal to {}", "a_path");
     }
 }
 
