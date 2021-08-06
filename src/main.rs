@@ -19,7 +19,7 @@ use std::env;
 use std::process;
 
 // This lib is described in the Cargo.toml
-use picturelib::Config;
+use picturelib::config::Config;
 
 fn example_main() {
     let mut s = String::from("hello");

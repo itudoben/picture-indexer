@@ -10,49 +10,11 @@ use std::time::{Duration, SystemTime};
 use chrono::{DateTime, Utc};
 use exif::{Error, Exif};
 
-pub struct Config {
-    pub picture_path: String,
-}
+use crate::config::Config;
+use crate::picture_utils::PictureMetadata;
 
-impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 2 {
-            return Err("not enough arguments");
-        }
-
-        Ok(Config { picture_path: args[1].clone() })
-    }
-}
-
-pub struct PictureMetadata {
-    pub file_path: String,
-    pub creation_date: DateTime<Utc>,
-    pub height_pixels: u32,
-    pub width_pixels: u32,
-}
-
-impl PictureMetadata {
-    fn new(file_path: String, creation_date: DateTime<Utc>) -> Result<PictureMetadata, &'static str> {
-        if file_path.is_empty() {
-            return Err("file path is empty");
-        }
-
-        Ok(PictureMetadata { file_path, creation_date, height_pixels: 0, width_pixels: 0 })
-    }
-}
-
-impl From<&PictureMetadata> for String {
-    fn from(a_pic_metadata: &PictureMetadata) -> Self {
-        let mut result: String = a_pic_metadata.file_path.clone();
-        result.push_str(";");
-        result.push_str(&*a_pic_metadata.creation_date.to_string());
-        result.push_str(";");
-        result.push_str(&*a_pic_metadata.height_pixels.to_string());
-        result.push_str(";");
-        result.push_str(&*a_pic_metadata.width_pixels.to_string());
-        result
-    }
-}
+pub mod config;
+mod picture_utils;
 
 pub fn run(config: Config) -> Result<(), Error> {
     let pic_tmp: String = config.picture_path.to_string(); // Make a copy
@@ -90,17 +52,10 @@ pub fn run(config: Config) -> Result<(), Error> {
 
     save_results_on_file(&v, file);
 
-    //
-    // let pic_path = "/Users/jhujol/Desktop/ford_taunus_tc_1972.jpeg";
-    // toto(pic_path);
-    //
-    // let pic_path2: &str = "/Users/jhujol/Desktop/vaccin-arn.jpeg";
-    // toto(pic_path2);
-    //
     Ok(())
 }
 
-fn save_results_on_file(v: &Vec<PictureMetadata>, mut file: File) -> () {
+fn save_results_on_file(v: &Vec<PictureMetadata>, mut file: File) {
     for item in v {
         let mut ss: String = String::from(item);
         ss.push('\n');
@@ -127,7 +82,7 @@ mod tests {
 
     use chrono::{DateTime, Utc};
 
-    use crate::PictureMetadata;
+    use crate::picture_utils::PictureMetadata;
 
     #[test]
     fn first_test() {
@@ -142,6 +97,7 @@ mod tests {
         let datetime: DateTime<Utc> = SystemTime::into(now);
         let a_path = String::from("a_path");
         let pm = PictureMetadata::new(a_path, datetime).unwrap();
+
         assert_eq!("a_path", pm.file_path, "This tests the path is equal to {}", "a_path");
     }
 }
